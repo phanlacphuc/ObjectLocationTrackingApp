@@ -1,8 +1,16 @@
 <?php
+$url=parse_url(getenv("DATABASE_URL"));
+$host = $url["host"];
+$user = $url["user"];
+$password = $url["pass"];
+$db = substr($url["path"],1);
+
+/*
 $user = 'root';
 $password = 'root';
 $db = 'ObjectLocationTracking';
 $host = 'localhost';
+*/
 $port = 3306;
 
 $link = mysqli_init();

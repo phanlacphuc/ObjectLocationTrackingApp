@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Heatmaps</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+#floating-panel {
+  position: absolute;
+  top: 10px;
+  left: 25%;
+  z-index: 5;
+  background-color: #fff;
+  padding: 5px;
+  border: 1px solid #999;
+  text-align: center;
+  font-family: 'Roboto','sans-serif';
+  line-height: 30px;
+  padding-left: 10px;
+}
+
+      #floating-panel {
+        background-color: #fff;
+        border: 1px solid #999;
+        left: 25%;
+        padding: 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 5;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="floating-panel">
+      <button onclick="toggleHeatmap()">Toggle Heatmap</button>
+      <button onclick="changeGradient()">Change gradient</button>
+      <button onclick="changeRadius()">Change radius</button>
+      <button onclick="changeOpacity()">Change opacity</button>
+    </div>
+    <div id="map"></div>
+    <script>
+
+var map, heatmap;
+var markers = [];
+var radiusValues = [];
+var weights = [[]];
+var heatmapData = [];
+var bounds;
+
+function initMap() {
+
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 30,
+    center: {lat: 34.979451, lng: 135.963502},
+    //mapTypeId: google.maps.MapTypeId.SATELLITE
+  });
+
+  heatmap = new google.maps.visualization.HeatmapLayer({
+    data: getPoints(),
+    map: map
+  });
+  
+  // This event listener will call addMarker() when the map is clicked.
+  /*
+  map.addListener('click', function(event) {
+    addMarker(event.latLng);
+  });
+  */
+  
+  
+  // Adds markers to the map.
+  addMarker({lat: 34.979390, lng: 135.963756});
+  radiusValues.push(300);
+  addMarker({lat: 34.979451, lng: 135.963502});
+  radiusValues.push(250);
+  addMarker({lat: 34.979645, lng: 135.963394});
+  radiusValues.push(200);
+  addMarker({lat: 34.979706, lng: 135.963705});
+  radiusValues.push(150);
+  
+  
+  setFitBounds();
+  
+  setHeatMapData();
+  
+  //var infoWindow = new google.maps.InfoWindow({map: map});
+  var geoMarker = new GeolocationMarker(map);
+  geoMarker.setCircleOptions({fillColor: '#808080'});
+  geoMarker.setMap(map);
+
+  // Try HTML5 geolocation.
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      var pos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      //infoWindow.setPosition(pos);
+      //infoWindow.setContent('Location found.');
+      map.setCenter(pos);
+  	  //geoMarker.setLocation = pos;
+    }, function() {
+      handleLocationError(true, infoWindow, map.getCenter());
+    });
+  } else {
+    // Browser doesn't support Geolocation
+    handleLocationError(false, infoWindow, map.getCenter());
+  }
+
+}
+
+function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+  infoWindow.setPosition(pos);
+  infoWindow.setContent(browserHasGeolocation ?
+                        'Error: The Geolocation service failed.' :
+                        'Error: Your browser doesn\'t support geolocation.');
+}
+
+function setFitBounds() {
+  var northEast;
+  var southWest;
+  bounds = new google.maps.LatLngBounds();
+  for (var i = 0; i < markers.length; i++) {
+    northEast = new google.maps.LatLng(markers[i].position.lat() + 0.000001 * radiusValues[i], markers[i].position.lng() + 0.000001 * radiusValues[i]);
+    southWest = new google.maps.LatLng(markers[i].position.lat() - 0.000001 * radiusValues[i], markers[i].position.lng() - 0.000001 * radiusValues[i]);
+    bounds.extend(northEast);
+    bounds.extend(southWest);
+  }
+  map.fitBounds(bounds);
+}
+
+// Adds a marker to the map and push to the array.
+function addMarker(location) {
+  var marker = new google.maps.Marker({
+    position: location,
+    map: map,
+    draggable: true,
+    animation: google.maps.Animation.DROP,    
+    title: 'Hello World!'
+  });
+  marker.addListener('click', moveMarker);
+  markers.push(marker);
+}
+
+// Sets the map on all markers in the array.
+function setMapOnAll(map) {
+  for (var i = 0; i < markers.length; i++) {
+    markers[i].setMap(map);
+  }
+}
+
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+  setMapOnAll(null);
+}
+
+// Shows any markers currently in the array.
+function showMarkers() {
+  setMapOnAll(map);
+}
+
+// Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+  clearMarkers();
+  markers = [];
+}
+
+function moveMarker() {
+  var newPosition = new google.maps.LatLng(markers[0].position.lat() + 0.000001, markers[0].position.lng() + 0.000001);
+  markers[0].setPosition(newPosition);
+}
+
+// set heatmap data
+function setHeatMapData() {
+  var distanceLat;
+  var distanceLng;
+  var numberOfNearbyDevices;
+  var weight;
+  var northEast = bounds.getNorthEast();
+  var southWest = bounds.getSouthWest();
+  for (var lat = southWest.lat(); lat <= northEast.lat(); lat += 0.000005) {
+    for (var lng = southWest.lng(); lng <= northEast.lng(); lng += 0.000005) {
+      numberOfNearbyDevices = 0;
+      weight = 0;
+      for (var i = 0; i < markers.length; i++) {
+        distanceLat = lat - markers[i].position.lat();
+        distanceLng = lng - markers[i].position.lng();
+        if ((distanceLat * distanceLat + distanceLng * distanceLng) <= 0.000000000001 * radiusValues[i] * radiusValues[i]) {
+          numberOfNearbyDevices++;
+          weight += (distanceLat * distanceLat + distanceLng * distanceLng) * 1000000000000 * 10 / (radiusValues[i] * radiusValues[i]);
+        }
+        else {
+          weight += (radiusValues[i] * radiusValues[i]) / ((distanceLat * distanceLat + distanceLng * distanceLng) * 1000000000000) * 10;
+        }
+      }
+      //if (numberOfNearbyDevices > 1) {
+        heatmapData.push({location: new google.maps.LatLng(lat, lng), weight: weight});
+      //}
+    }
+  }
+  /*
+  for (var i = 0; i < radiusValues.length; i++) {
+    for (var j = 0; j < radiusValues[i]; j+=markers.length*5) {
+      for (var k = 0; k < radiusValues[i]; k+=markers.length*3) {
+        //console.log("i="+i+";j="+j+";k="+k);
+        if ((j*j+k*k) <= radiusValues[i]*radiusValues[i]) {
+          heatmapData.push(new google.maps.LatLng(markers[i].position.lat() + 0.000001 * j, markers[i].position.lng() + 0.000001 * k));
+          if (k!=0 && j!=0) {
+          	heatmapData.push(new google.maps.LatLng(markers[i].position.lat() - 0.000001 * j, markers[i].position.lng() + 0.000001 * k));
+          }
+          if (k!=0) {
+            heatmapData.push(new google.maps.LatLng(markers[i].position.lat() + 0.000001 * j, markers[i].position.lng() - 0.000001 * k));
+          }
+          if (j!=0) {
+            heatmapData.push(new google.maps.LatLng(markers[i].position.lat() - 0.000001 * j, markers[i].position.lng() - 0.000001 * k));
+          }
+        }
+      }
+    }
+  }
+  */
+  heatmap.setData(heatmapData);
+}
+
+function toggleHeatmap() {
+  heatmap.setMap(heatmap.getMap() ? null : map);
+}
+
+function changeGradient() {
+  var gradient = [
+    'rgba(0, 255, 255, 0)',
+    'rgba(0, 255, 255, 1)',
+    'rgba(0, 191, 255, 1)',
+    'rgba(0, 127, 255, 1)',
+    'rgba(0, 63, 255, 1)',
+    'rgba(0, 0, 255, 1)',
+    'rgba(0, 0, 223, 1)',
+    'rgba(0, 0, 191, 1)',
+    'rgba(0, 0, 159, 1)',
+    'rgba(0, 0, 127, 1)',
+    'rgba(63, 0, 91, 1)',
+    'rgba(127, 0, 63, 1)',
+    'rgba(191, 0, 31, 1)',
+    'rgba(255, 0, 0, 1)'
+  ]
+  heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+}
+
+function changeRadius() {
+  heatmap.set('radius', heatmap.get('radius') ? null : 20);
+}
+
+function changeOpacity() {
+  heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
+}
+
+function getPoints() {
+  return [];
+}
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADNExm3N8B8njiliUOcT9XuGfOW1qNOFs&signed_in=true&libraries=visualization&callback=initMap">
+    </script>
+    
+    <script src="http://chadkillingsworth.github.io/geolocation-marker/dist/geolocationmarker-compiled.js"></script>
+    
+  </body>
+</html>

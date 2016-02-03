@@ -1,5 +1,4 @@
 <?php
-
 require_once("connection.php");
 	
 $format = strtolower($_GET['format']) == 'json' ? 'json' : 'xml';
@@ -8,7 +7,14 @@ $sql = "";
 if(isset($_GET["getData"])){
 	$sql = "SELECT * FROM data";
 } else if(isset($_GET["postData"])){
-	$sql = "insert into data(object_id, latitude, longitude, time_stamp, distance) values(1,1.0,1.0,0,0)";
+	$ibeacon_major_number = $_GET['ibeacon_major_number'];
+	$ibeacon_minor_number = $_GET['ibeacon_minor_number'];
+	$latitude = $_GET['latitude'];
+	$longitude = $_GET['longitude'];
+	$distance = $_GET['distance'];
+	$device_token = $_GET['device_token'];
+	$sql = "insert into data(ibeacon_major_number, ibeacon_minor_number, latitude, longitude, distance, device_token) values(".$ibeacon_major_number.",".$ibeacon_minor_number.",".$latitude.",".$longitude.",".$distance.",".$device_token.")";
+	echo $sql;
 } else{
     echo "Invalid request!";
 }
@@ -24,7 +30,7 @@ if (!success) {
 $result = mysqli_use_result($link);
 $data_array = array();
 while ($row = mysqli_fetch_row($result)) {
-	$data_array[] = array('id' => $row[0], 'object_id' => $row[1], 'latitude' => $row[2], 'longitude' => $row[3], 'time_stamp' => $row[4], 'distance' => $row[5]);
+	$data_array[] = array('id' => $row[0], 'ibeacon_major_number' => $row[1], 'ibeacon_minor_number' => $row[2], 'latitude' => $row[3], 'longitude' => $row[4], 'time_stamp' => $row[5], 'distance' => $row[6], 'device_token' => $row[7]);
 }
 mysqli_free_result($result);
 

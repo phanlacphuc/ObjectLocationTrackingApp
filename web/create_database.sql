@@ -1,9 +1,11 @@
 CREATE TABLE IF NOT EXISTS data (
   id int(11) NOT NULL AUTO_INCREMENT,
-  object_id int(11) NOT NULL,
+  ibeacon_major_number int(11) NOT NULL,
+  ibeacon_minor_number int(11) NOT NULL,
   latitude double NOT NULL,
   longitude double NOT NULL,
-  time_stamp TIME NOT NULL,
+  time_stamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
   distance double NOT NULL,
+  device_token int(11) NOT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;

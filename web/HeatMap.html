@@ -32,10 +32,20 @@ html, body {
 
   <body>
     <div id="floating-panel">
+    <!--
       <button onclick="toggleHeatmap()">Toggle Heatmap</button>
       <button onclick="changeGradient()">Change gradient</button>
       <button onclick="changeRadius()">Change radius</button>
       <button onclick="changeOpacity()">Change opacity</button>
+      <br/>
+      -->
+      <label for="ibeacon_major_number">ibeacon_major_number：</label>
+      <input type="text" id="ibeacon_major_number" value="">
+      <br/>
+      <label for="ibeacon_minor_number">ibeacon_minor_number：</label>
+      <input type="text" id="ibeacon_minor_number" value="">
+      <br/>
+      <button onclick="getDataFromServer()">Get data!</button>
     </div>
     <div id="map"></div>
     
@@ -132,6 +142,47 @@ function initialize() {
   addYourLocationButton(map);
 }
 
+function myFunction(jsonObject) {
+    var i;
+    for(i = 0; i < jsonObject.data_array.length; i++) {
+    	// Adds markers to the map.
+  		addMarker(new google.maps.LatLng(jsonObject.data_array[i].latitude, jsonObject.data_array[i].longitude));
+  		radiusValues.push(jsonObject.data_array[i].distance);
+    	/*
+  		addMarker({lat: 34.979390, lng: 135.963756});
+  		radiusValues.push(300);
+  		addMarker({lat: 34.979451, lng: 135.963502});
+  		radiusValues.push(250);
+  		addMarker({lat: 34.979645, lng: 135.963394});
+  		radiusValues.push(200);
+  		addMarker({lat: 34.979706, lng: 135.963705});
+  		radiusValues.push(150);
+  		*/
+    }
+    if (jsonObject.data_array.length) {
+		setFitBounds();
+		setHeatMapData();
+    }
+}
+
+function getDataFromServer() {
+  var ibeacon_major_number = document.getElementById("ibeacon_major_number").value;
+  var ibeacon_minor_number = document.getElementById("ibeacon_minor_number").value;
+  var xmlhttp = new XMLHttpRequest();
+  var url = "server.php?getData&format=json&ibeacon_major_number="+ibeacon_major_number+"&ibeacon_minor_number="+ibeacon_minor_number;
+
+  xmlhttp.onreadystatechange = function() {
+
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        var jsonObject = JSON.parse(xmlhttp.responseText);
+        myFunction(jsonObject);
+    }
+    
+  };
+  xmlhttp.open("GET", url, true);
+  xmlhttp.send();
+  
+}
 function initMap() {
 
   map = new google.maps.Map(document.getElementById('map'), {
@@ -145,21 +196,6 @@ function initMap() {
     map: map
   });
   
-  // Adds markers to the map.
-  addMarker({lat: 34.979390, lng: 135.963756});
-  radiusValues.push(300);
-  addMarker({lat: 34.979451, lng: 135.963502});
-  radiusValues.push(250);
-  addMarker({lat: 34.979645, lng: 135.963394});
-  radiusValues.push(200);
-  addMarker({lat: 34.979706, lng: 135.963705});
-  radiusValues.push(150);
-  
-  
-  setFitBounds();
-  
-  setHeatMapData();
-  
   //var infoWindow = new google.maps.InfoWindow({map: map});
   
   google.maps.event.addDomListener(window, 'load', initialize);
@@ -167,6 +203,7 @@ function initMap() {
   if(!navigator.geolocation) {
 	alert('Your browser does not support geolocation');
   }
+  
 }
 
 function handleLocationError(browserHasGeolocation, infoWindow, pos) {
@@ -181,8 +218,8 @@ function setFitBounds() {
   var southWest;
   bounds = new google.maps.LatLngBounds();
   for (var i = 0; i < markers.length; i++) {
-    northEast = new google.maps.LatLng(markers[i].position.lat() + 0.000001 * radiusValues[i], markers[i].position.lng() + 0.000001 * radiusValues[i]);
-    southWest = new google.maps.LatLng(markers[i].position.lat() - 0.000001 * radiusValues[i], markers[i].position.lng() - 0.000001 * radiusValues[i]);
+    northEast = new google.maps.LatLng(markers[i].position.lat() + 0.000010 * radiusValues[i], markers[i].position.lng() + 0.000010 * radiusValues[i]);
+    southWest = new google.maps.LatLng(markers[i].position.lat() - 0.000010 * radiusValues[i], markers[i].position.lng() - 0.000010 * radiusValues[i]);
     bounds.extend(northEast);
     bounds.extend(southWest);
   }
@@ -230,10 +267,19 @@ function moveMarker() {
   markers[0].setPosition(newPosition);
 }
 
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  var p = 0.017453292519943295;    // Math.PI / 180
+  var c = Math.cos;
+  var a = 0.5 - c((lat2 - lat1) * p)/2 + 
+          c(lat1 * p) * c(lat2 * p) * 
+          (1 - c((lon2 - lon1) * p))/2;
+
+  return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
+}
+
 // set heatmap data
 function setHeatMapData() {
-  var distanceLat;
-  var distanceLng;
+  var distance;
   var numberOfNearbyDevices;
   var weight;
   var northEast = bounds.getNorthEast();
@@ -243,14 +289,14 @@ function setHeatMapData() {
       numberOfNearbyDevices = 0;
       weight = 0;
       for (var i = 0; i < markers.length; i++) {
-        distanceLat = lat - markers[i].position.lat();
-        distanceLng = lng - markers[i].position.lng();
-        if ((distanceLat * distanceLat + distanceLng * distanceLng) <= 0.000000000001 * radiusValues[i] * radiusValues[i]) {
+        distance = 1000 * calculateDistance(markers[i].position.lat(), markers[i].position.lng(), lat, lng);// convert unit to metres
+        
+        if (distance <= radiusValues[i]) {
           numberOfNearbyDevices++;
-          weight += (distanceLat * distanceLat + distanceLng * distanceLng) * 1000000000000 * 10 / (radiusValues[i] * radiusValues[i]);
+          weight += distance / radiusValues[i];
         }
         else {
-          weight += (radiusValues[i] * radiusValues[i]) / ((distanceLat * distanceLat + distanceLng * distanceLng) * 1000000000000) * 10;
+          weight += radiusValues[i] / distance;
         }
       }
       //if (numberOfNearbyDevices > 1) {

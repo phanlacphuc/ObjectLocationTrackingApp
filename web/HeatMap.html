@@ -32,13 +32,11 @@ html, body {
 
   <body>
     <div id="floating-panel">
-    <!--
       <button onclick="toggleHeatmap()">Toggle Heatmap</button>
       <button onclick="changeGradient()">Change gradient</button>
       <button onclick="changeRadius()">Change radius</button>
       <button onclick="changeOpacity()">Change opacity</button>
       <br/>
-      -->
       <label for="ibeacon_major_number">ibeacon_major_number：</label>
       <input type="text" id="ibeacon_major_number" value="">
       <br/>
@@ -138,6 +136,9 @@ function initialize() {
 	alert('There was an error obtaining your position. Message: ' + e.message);
   });
 
+  google.maps.event.addListener(map,'zoom_changed', function() {
+	changeRadius();
+  });
   
   addYourLocationButton(map);
 }
@@ -353,7 +354,10 @@ function changeGradient() {
 }
 
 function changeRadius() {
-  heatmap.set('radius', heatmap.get('radius') ? null : 20);
+  var zoom =  map.getZoom();
+  var scale_ratio = Math.pow(2,(zoom-1))/591657550.500000;
+  heatmap.set('radius', scale_ratio * 5000);
+  //heatmap.set('radius', heatmap.get('radius') ? null : 20);
 }
 
 function changeOpacity() {

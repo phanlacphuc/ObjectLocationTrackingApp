@@ -113,6 +113,8 @@ function initialize() {
   
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
+    current_position = position;
+    geoMarker.setLocation = current_position;
       var pos = {
         lat: position.coords.latitude,
         lng: position.coords.longitude

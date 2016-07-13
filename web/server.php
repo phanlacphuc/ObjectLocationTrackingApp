@@ -20,7 +20,7 @@ if(isset($_GET["getData"])){
 	$result = mysqli_use_result($link);
 	$data_array = array();
 	while ($row = mysqli_fetch_row($result)) {
-		$data_array[] = array('id' => $row[0], 'ibeacon_major_number' => $row[1], 'ibeacon_minor_number' => $row[2], 'latitude' => $row[3], 'longitude' => $row[4], 'time_stamp' => $row[5], 'rssi' => $row[6], 'session_number' => $row[7]);
+		$data_array[] = array('id' => $row[0], 'ibeacon_major_number' => $row[1], 'ibeacon_minor_number' => $row[2], 'latitude' => $row[3], 'longitude' => $row[4], 'time_stamp' => $row[5], 'rssi' => $row[6], 'session_number' => $row[7], 'test_number' => $row[8]);
 	}
 	mysqli_free_result($result);
 
@@ -57,7 +57,8 @@ if(isset($_GET["getData"])){
 	$longitude = $_GET['longitude'];
 	$rssi = $_GET['rssi'];
 	$session_number = $_GET['session_number'];
-	$sql = "insert into data(ibeacon_major_number, ibeacon_minor_number, latitude, longitude, rssi, session_number) values(".$ibeacon_major_number.",".$ibeacon_minor_number.",".$latitude.",".$longitude.",".$rssi.",".$session_number.")";
+	$test_number = $_GET['test_number'];
+	$sql = "insert into data(ibeacon_major_number, ibeacon_minor_number, latitude, longitude, rssi, session_number, test_number) values(".$ibeacon_major_number.",".$ibeacon_minor_number.",".$latitude.",".$longitude.",".$rssi.",".$session_number.",".$test_number.")";
 	
 	
 	$success = mysqli_real_query($link, $sql);
@@ -83,6 +84,21 @@ if(isset($_GET["getData"])){
 	
 	header('Content-type: application/json');
 	echo json_encode(array('session_number'=>$last_id));
+} else if(isset($_GET["registerTest"])){
+	$sql = "insert into test() values()";
+	
+	$success = mysqli_real_query($link, $sql);
+	if (!success) {
+		printf("Query failed: %s\n", mysqli_connect_error());
+		exit();
+	}
+	
+	$last_id = mysqli_insert_id($link);
+
+	mysqli_close($link);
+	
+	header('Content-type: application/json');
+	echo json_encode(array('test_number'=>$last_id));
 } else{
     echo "Invalid request!";
 }

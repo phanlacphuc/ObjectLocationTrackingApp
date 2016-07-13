@@ -46,6 +46,7 @@ html, body {
       <input type="text" id="ibeacon_minor_number" value="">
       <br/>
       <button onclick="getDataFromServer()">Get data!</button>
+      <button onclick="foundObject()">Found object!</button>
     </div>
     <div id="map"></div>
     
@@ -189,6 +190,22 @@ function getDataFromServer() {
   xmlhttp.send();
   
 }
+
+function foundObject() {
+  var url = "server.php?sendPosition&latitude="+current_position.lat()+"&longitude="+current_position.lng();
+
+  xmlhttp.onreadystatechange = function() {
+
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert("found object!");
+    }
+    
+  };
+  xmlhttp.open("GET", url, true);
+  xmlhttp.send();
+  
+}
+
 function initMap() {
 
   map = new google.maps.Map(document.getElementById('map'), {

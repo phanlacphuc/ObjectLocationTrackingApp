@@ -18,5 +18,7 @@ CREATE TABLE IF NOT EXISTS session (
 
 CREATE TABLE IF NOT EXISTS test (
   test_number int(11) NOT NULL AUTO_INCREMENT,
+  latitude double,
+  longitude double,
   PRIMARY KEY (test_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;

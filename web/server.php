@@ -99,6 +99,23 @@ if(isset($_GET["getData"])){
 	
 	header('Content-type: application/json');
 	echo json_encode(array('test_number'=>$last_id));
+} else if(isset($_GET["sendPosition"])){
+	$latitude = $_GET['latitude'];
+	$longitude = $_GET['longitude'];
+	$sql = "UPDATE TABLE test SET latitude = ".$latitude.", longitude = ".$longitude." WHERE test_number IN (SELECT MAX(test_number) FROM test)";
+	
+	$success = mysqli_real_query($link, $sql);
+	if (!success) {
+		printf("Query failed: %s\n", mysqli_connect_error());
+		exit();
+	}
+	
+	$last_id = mysqli_insert_id($link);
+
+	mysqli_close($link);
+	
+	header('Content-type: application/json');
+	echo json_encode(array('test_number'=>$last_id));
 } else{
     echo "Invalid request!";
 }

@@ -194,6 +194,7 @@ function getDataFromServer() {
 function foundObject() {
   var url = "server.php?sendPosition&latitude="+current_position.coords.latitude+"&longitude="+current_position.coords.longitude;
 
+  var xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = function() {
 
     if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {

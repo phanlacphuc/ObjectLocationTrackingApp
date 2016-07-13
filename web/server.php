@@ -102,7 +102,7 @@ if(isset($_GET["getData"])){
 } else if(isset($_GET["sendPosition"])){
 	$latitude = $_GET['latitude'];
 	$longitude = $_GET['longitude'];
-	$sql = "UPDATE TABLE test SET latitude = ".$latitude.", longitude = ".$longitude." WHERE test_number IN (SELECT MAX(test_number) FROM (SELECT * FROM test) AS temp_table)";
+	$sql = "UPDATE test SET latitude = ".$latitude.", longitude = ".$longitude." WHERE test_number IN (SELECT MAX(test_number) FROM (SELECT * FROM test) AS temp_table)";
 	
 	$success = mysqli_real_query($link, $sql);
 	if (!success) {
@@ -114,8 +114,7 @@ if(isset($_GET["getData"])){
 
 	mysqli_close($link);
 	
-	header('Content-type: application/json');
-	echo json_encode(array('test_number'=>$last_id));
+	echo $sql;
 } else{
     echo "Invalid request!";
 }

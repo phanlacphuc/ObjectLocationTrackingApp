@@ -7,7 +7,8 @@ $sql = "";
 if(isset($_GET["getData"])){
 	$ibeacon_major_number = $_GET['ibeacon_major_number'];
 	$ibeacon_minor_number = $_GET['ibeacon_minor_number'];
-	$sql = "SELECT * FROM data WHERE id IN (SELECT MAX(id) FROM data WHERE ibeacon_major_number = ".$ibeacon_major_number." AND ibeacon_minor_number = ".$ibeacon_minor_number." GROUP BY ibeacon_major_number,ibeacon_minor_number,device_token)";
+	//$sql = "SELECT * FROM data WHERE id IN (SELECT MAX(id) FROM data WHERE ibeacon_major_number = ".$ibeacon_major_number." AND ibeacon_minor_number = ".$ibeacon_minor_number." GROUP BY ibeacon_major_number,ibeacon_minor_number,session_number)";
+	$sql = "SELECT * FROM data ORDER BY id DESC LIMIT 100";
 	
 	
 	$success = mysqli_real_query($link, $sql);
@@ -19,7 +20,7 @@ if(isset($_GET["getData"])){
 	$result = mysqli_use_result($link);
 	$data_array = array();
 	while ($row = mysqli_fetch_row($result)) {
-		$data_array[] = array('id' => $row[0], 'ibeacon_major_number' => $row[1], 'ibeacon_minor_number' => $row[2], 'latitude' => $row[3], 'longitude' => $row[4], 'time_stamp' => $row[5], 'distance' => $row[6], 'device_token' => $row[7]);
+		$data_array[] = array('id' => $row[0], 'ibeacon_major_number' => $row[1], 'ibeacon_minor_number' => $row[2], 'latitude' => $row[3], 'longitude' => $row[4], 'time_stamp' => $row[5], 'rssi' => $row[6], 'session_number' => $row[7]);
 	}
 	mysqli_free_result($result);
 
@@ -54,9 +55,9 @@ if(isset($_GET["getData"])){
 	$ibeacon_minor_number = $_GET['ibeacon_minor_number'];
 	$latitude = $_GET['latitude'];
 	$longitude = $_GET['longitude'];
-	$distance = $_GET['distance'];
-	$device_token = $_GET['device_token'];
-	$sql = "insert into data(ibeacon_major_number, ibeacon_minor_number, latitude, longitude, distance, device_token) values(".$ibeacon_major_number.",".$ibeacon_minor_number.",".$latitude.",".$longitude.",".$distance.",".$device_token.")";
+	$rssi = $_GET['rssi'];
+	$session_number = $_GET['session_number'];
+	$sql = "insert into data(ibeacon_major_number, ibeacon_minor_number, latitude, longitude, rssi, session_number) values(".$ibeacon_major_number.",".$ibeacon_minor_number.",".$latitude.",".$longitude.",".$rssi.",".$session_number.")";
 	
 	
 	$success = mysqli_real_query($link, $sql);
@@ -67,8 +68,8 @@ if(isset($_GET["getData"])){
 	mysqli_close($link);
 	
 	echo $sql;
-} else if(isset($_GET["registerDevice"])){
-	$sql = "insert into device() values()";
+} else if(isset($_GET["registerSession"])){
+	$sql = "insert into session() values()";
 	
 	$success = mysqli_real_query($link, $sql);
 	if (!success) {
@@ -81,7 +82,7 @@ if(isset($_GET["getData"])){
 	mysqli_close($link);
 	
 	header('Content-type: application/json');
-	echo json_encode(array('device_token'=>$last_id));
+	echo json_encode(array('session_number'=>$last_id));
 } else{
     echo "Invalid request!";
 }

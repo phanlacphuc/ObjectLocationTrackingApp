@@ -32,11 +32,13 @@ html, body {
 
   <body>
     <div id="floating-panel">
+    <!--
       <button onclick="toggleHeatmap()">Toggle Heatmap</button>
       <button onclick="changeGradient()">Change gradient</button>
       <button onclick="changeRadius()">Change radius</button>
       <button onclick="changeOpacity()">Change opacity</button>
       <br/>
+      -->
       <label for="ibeacon_major_number">ibeacon_major_number：</label>
       <input type="text" id="ibeacon_major_number" value="">
       <br/>
@@ -145,10 +147,13 @@ function initialize() {
 
 function myFunction(jsonObject) {
     var i;
+    var radius;
     for(i = 0; i < jsonObject.data_array.length; i++) {
     	// Adds markers to the map.
-  		addMarker(new google.maps.LatLng(jsonObject.data_array[i].latitude, jsonObject.data_array[i].longitude));
-  		radiusValues.push(jsonObject.data_array[i].distance);
+    	radius = 0.002 * Math.exp(-0.08 * jsonObject.data_array[i].rssi);
+  		addMarker(new google.maps.LatLng(parseFloat(jsonObject.data_array[i].latitude), parseFloat(jsonObject.data_array[i].longitude)));
+  		//radiusValues.push(jsonObject.data_array[i].distance);
+  		radiusValues.push(radius);
     	/*
   		addMarker({lat: 34.979390, lng: 135.963756});
   		radiusValues.push(300);
@@ -219,8 +224,8 @@ function setFitBounds() {
   var southWest;
   bounds = new google.maps.LatLngBounds();
   for (var i = 0; i < markers.length; i++) {
-    northEast = new google.maps.LatLng(markers[i].position.lat() + 0.000010 * radiusValues[i], markers[i].position.lng() + 0.000010 * radiusValues[i]);
-    southWest = new google.maps.LatLng(markers[i].position.lat() - 0.000010 * radiusValues[i], markers[i].position.lng() - 0.000010 * radiusValues[i]);
+    northEast = new google.maps.LatLng(markers[i].position.lat() + 0.000015 * radiusValues[i], markers[i].position.lng() + 0.000015 * radiusValues[i]);
+    southWest = new google.maps.LatLng(markers[i].position.lat() - 0.000015 * radiusValues[i], markers[i].position.lng() - 0.000015 * radiusValues[i]);
     bounds.extend(northEast);
     bounds.extend(southWest);
   }
@@ -229,6 +234,8 @@ function setFitBounds() {
 
 // Adds a marker to the map and push to the array.
 function addMarker(location) {
+
+  //console.log("lat "+location.lat()+"lng "+location.lng())
   var marker = new google.maps.Marker({
     position: location,
     map: map,
@@ -237,9 +244,10 @@ function addMarker(location) {
     title: 'Hello World!'
   });
   marker.addListener('click', moveMarker);
+
   markers.push(marker);
 }
-
+/*
 // Sets the map on all markers in the array.
 function setMapOnAll(map) {
   for (var i = 0; i < markers.length; i++) {
@@ -262,7 +270,7 @@ function deleteMarkers() {
   clearMarkers();
   markers = [];
 }
-
+*/
 function moveMarker() {
   var newPosition = new google.maps.LatLng(markers[0].position.lat() + 0.000001, markers[0].position.lng() + 0.000001);
   markers[0].setPosition(newPosition);
@@ -280,53 +288,51 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // set heatmap data
 function setHeatMapData() {
+
+  var maxWeight = 0;
+  var maxWeightPointLat;
+  var maxWeightPointLng;
   var distance;
-  var numberOfNearbyDevices;
+  var numberOfData = markers.length;
   var weight;
   var northEast = bounds.getNorthEast();
   var southWest = bounds.getSouthWest();
+  var j=0, k=0;
+  var weightMatrix = "";
+  var sigma = 1;
   for (var lat = southWest.lat(); lat <= northEast.lat(); lat += 0.000005) {
+    j++;
     for (var lng = southWest.lng(); lng <= northEast.lng(); lng += 0.000005) {
-      numberOfNearbyDevices = 0;
+      k++;
       weight = 0;
       for (var i = 0; i < markers.length; i++) {
         distance = 1000 * calculateDistance(markers[i].position.lat(), markers[i].position.lng(), lat, lng);// convert unit to metres
         
-        if (distance <= radiusValues[i]) {
-          numberOfNearbyDevices++;
-          weight += distance / radiusValues[i];
-        }
-        else {
-          weight += radiusValues[i] / distance;
-        }
+        weight += 1 / Math.sqrt(2*Math.PI) / sigma * Math.exp(-0.5 * Math.pow(((distance - radiusValues[i])/sigma), 2));
+        
       }
-      //if (numberOfNearbyDevices > 1) {
-        heatmapData.push({location: new google.maps.LatLng(lat, lng), weight: weight});
+      
+      if (weight > maxWeight) {
+      	maxWeight = weight;
+      	maxWeightPointLat = lat;
+      	maxWeightPointLng = lng;
+      }
+      if (j%5==0 && k%5==0) weightMatrix=weightMatrix+(Math.round(12 * weight / numberOfData *100)/100+"\t");
+      //if (numberOfData > 1) {
+        heatmapData.push({location: new google.maps.LatLng(lat, lng), weight: 12 * weight / numberOfData});
       //}
+      
     }
-  }
-  /*
-  for (var i = 0; i < radiusValues.length; i++) {
-    for (var j = 0; j < radiusValues[i]; j+=markers.length*5) {
-      for (var k = 0; k < radiusValues[i]; k+=markers.length*3) {
-        //console.log("i="+i+";j="+j+";k="+k);
-        if ((j*j+k*k) <= radiusValues[i]*radiusValues[i]) {
-          heatmapData.push(new google.maps.LatLng(markers[i].position.lat() + 0.000001 * j, markers[i].position.lng() + 0.000001 * k));
-          if (k!=0 && j!=0) {
-          	heatmapData.push(new google.maps.LatLng(markers[i].position.lat() - 0.000001 * j, markers[i].position.lng() + 0.000001 * k));
-          }
-          if (k!=0) {
-            heatmapData.push(new google.maps.LatLng(markers[i].position.lat() + 0.000001 * j, markers[i].position.lng() - 0.000001 * k));
-          }
-          if (j!=0) {
-            heatmapData.push(new google.maps.LatLng(markers[i].position.lat() - 0.000001 * j, markers[i].position.lng() - 0.000001 * k));
-          }
-        }
-      }
+    
+    if (j%5==0) {
+    	console.log(weightMatrix);
+    	weightMatrix = "";
     }
+    
   }
-  */
+  
   heatmap.setData(heatmapData);
+  console.log("maxWeight Lat: "+maxWeightPointLat+" Lng: "+maxWeightPointLng);
 }
 
 function toggleHeatmap() {

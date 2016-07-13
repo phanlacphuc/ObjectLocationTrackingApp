@@ -8,7 +8,7 @@ if(isset($_GET["getData"])){
 	$ibeacon_major_number = $_GET['ibeacon_major_number'];
 	$ibeacon_minor_number = $_GET['ibeacon_minor_number'];
 	//$sql = "SELECT * FROM data WHERE id IN (SELECT MAX(id) FROM data WHERE ibeacon_major_number = ".$ibeacon_major_number." AND ibeacon_minor_number = ".$ibeacon_minor_number." GROUP BY ibeacon_major_number,ibeacon_minor_number,session_number)";
-	$sql = "SELECT * FROM data WHERE test_number IN (SELECT MAX(test_number) FROM test) ORDER BY id DESC LIMIT 100 ";
+	$sql = "SELECT * FROM data WHERE ibeacon_major_number = ".$ibeacon_major_number." AND ibeacon_minor_number = ".$ibeacon_minor_number." AND test_number IN (SELECT MAX(test_number) FROM test) ORDER BY id DESC LIMIT 100 ";
 	
 	
 	$success = mysqli_real_query($link, $sql);

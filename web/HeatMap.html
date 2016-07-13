@@ -202,7 +202,9 @@ function getDataFromServer() {
 }
 
 function foundObject() {
-  var url = "server.php?sendPosition&latitude="+JSON.stringify(current_position.lat)+"&longitude="+(current_position.lng);
+  var lat = current_position.lat;
+  var lng = current_position.lng;
+  var url = "server.php?sendPosition&latitude="+lat+"&longitude="+lng;
 
   var xmlhttp = new XMLHttpRequest();
   
